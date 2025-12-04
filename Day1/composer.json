@@ -1,0 +1,15 @@
+{
+    "name": "learning/day1-php",
+    "description": "Day 1 - PHP Core + Composer + PSR-4 practice project",
+    "type": "project",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Src\\": "Src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "license": "MIT"
+}
+
+
