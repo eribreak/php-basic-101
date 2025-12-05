@@ -1,0 +1,19 @@
+{
+    "name": "learning/day2-php",
+    "description": "Day 2 - PHP OOP + Mini MVC Framework",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Src\\": "Src/"
+        },
+        "classmap": [
+            "Src/OOP"
+        ]
+    },
+    "minimum-stability": "stable",
+    "license": "MIT"
+}
+
