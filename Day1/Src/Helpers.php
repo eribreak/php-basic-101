@@ -112,6 +112,26 @@ class Helpers
 
         return max($numbers);
     }
+
+    public static function timeRemote(string $day): int
+    {
+        if (!in_array($day, ['Monday', 'Friday', 'Tuesday', 'Wednesday', 'Thursday'])) {
+            throw new \Exception('Invalid day');
+        }
+        
+        switch ($day) {
+            case 'Monday' || 'Friday':
+                return 1;
+            case 'Tuesday':
+                return 2;
+            case 'Wednesday':
+                return 3;
+            case 'Thursday':
+                return 4;
+            default:
+                return 0;
+        }
+    }
 }
 
 
