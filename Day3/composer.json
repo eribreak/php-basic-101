@@ -1,0 +1,16 @@
+{
+    "name": "learning/day3-php",
+    "description": "Day 3 - MySQL + PDO CRUD TodoList",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "license": "MIT"
+}
+
