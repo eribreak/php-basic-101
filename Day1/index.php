@@ -94,3 +94,10 @@ echo 'Formatted date: ' . Helpers::formatDate('2025-02-15') . PHP_EOL;
 echo 'Max number: ' . Helpers::maxNumber($numbers) . PHP_EOL;
 
 
+
+echo 'Time remote: ' . Helpers::timeRemote('Monday') . PHP_EOL;
+try {
+    echo 'Time remote: ' . Helpers::timeRemote('ABC') . PHP_EOL;
+} catch (\Exception $e) {
+    echo $e->getMessage() . PHP_EOL;
+}
