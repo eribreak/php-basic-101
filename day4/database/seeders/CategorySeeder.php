@@ -9,14 +9,6 @@ class CategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $categories = [
-            ['name' => 'Công việc'],
-            ['name' => 'Cá nhân'],
-            ['name' => 'Học tập'],
-        ];
-
-        foreach ($categories as $category) {
-            Category::create($category);
-        }
+        Category::factory()->count(3)->create();
     }
 }

@@ -51,6 +51,7 @@
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn chắc chắn muốn xóa?')">Xóa</button>
                         </form>
+                        <a href="{{ route('send-welcome-mail', $todo) }}" class="btn btn-warning btn-sm">Gửi Email</a>
                     </td>
                 </tr>
             @endforeach
