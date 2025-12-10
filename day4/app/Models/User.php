@@ -49,4 +49,13 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+
+    public function routeNotificationForVonage($notification): ?string
+    {
+        if (!empty($this->phone)) {
+            return $this->phone;
+        }
+
+        return env('VONAGE_SMS_TO');
+    }
 }

@@ -11,7 +11,10 @@
     <div class="alert alert-error">{{ session('error') }}</div>
 @endif
 
-<p><a href="{{ route('todos.create') }}" class="btn btn-primary">Thêm Todo Mới</a></p>
+<p>
+    <a href="{{ route('todos.create') }}" class="btn btn-primary">Thêm Todo Mới</a>
+    <a href="{{ route('notifications.index') }}" class="btn">Thông báo</a>
+</p>
 
 <div class="filter">
     <a href="{{ route('todos.index') }}" class="{{ $currentStatus === null ? 'active' : '' }}">Tất cả</a>
