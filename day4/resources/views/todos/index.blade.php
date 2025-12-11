@@ -7,22 +7,57 @@
     <a href="{{ route('todos.create') }}" class="bg-blue-strong text-white px-4 py-2 rounded-md hover:bg-blue-hover transition">
         Thêm Todo Mới
     </a>
-    <a href="{{ route('notifications.index') }}" class="bg-gray text-gray-strong px-4 py-2 rounded-md hover:bg-gray-border transition">
-        Thông báo
-    </a>
 </div>
 
-<div class="flex gap-3 mb-6">
-    <a href="{{ route('todos.index') }}" class="px-4 py-2 rounded-md transition {{ $currentStatus === null ? 'bg-blue-strong text-white' : 'bg-gray text-gray-strong hover:bg-gray-border' }}">
-        Tất cả
-    </a>
-    <a href="{{ route('todos.index', ['status' => 'pending']) }}" class="px-4 py-2 rounded-md transition {{ $currentStatus === 'pending' ? 'bg-blue-strong text-white' : 'bg-gray text-gray-strong hover:bg-gray-border' }}">
-        Đang làm
-    </a>
-    <a href="{{ route('todos.index', ['status' => 'completed']) }}" class="px-4 py-2 rounded-md transition {{ $currentStatus === 'completed' ? 'bg-blue-strong text-white' : 'bg-gray text-gray-strong hover:bg-gray-border' }}">
-        Hoàn thành
-    </a>
-</div>
+<form method="GET" action="{{ route('todos.index') }}" class="flex flex-col gap-4 md:flex-row md:items-end mb-6">
+    <div class="flex-1">
+        <label for="search" class="block mb-1 text-gray-strong">Tìm kiếm</label>
+        <input
+            type="text"
+            id="search"
+            name="search"
+            value="{{ $searchQuery }}"
+            placeholder="Nhập tiêu đề hoặc mô tả"
+            class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent"
+        >
+    </div>
+
+    <div>
+        <label for="status" class="block mb-1 text-gray-strong">Trạng thái</label>
+        <select
+            id="status"
+            name="status"
+            class="px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent"
+        >
+            <option value="" {{ $currentStatus === null ? 'selected' : '' }}>Tất cả</option>
+            <option value="pending" {{ $currentStatus === 'pending' ? 'selected' : '' }}>Đang làm</option>
+            <option value="completed" {{ $currentStatus === 'completed' ? 'selected' : '' }}>Hoàn thành</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="priority" class="block mb-1 text-gray-strong">Ưu tiên</label>
+        <select
+            id="priority"
+            name="priority"
+            class="px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent"
+        >
+            <option value="" {{ ($currentPriority ?? null) === null ? 'selected' : '' }}>Tất cả</option>
+            <option value="high" {{ ($currentPriority ?? null) === 'high' ? 'selected' : '' }}>Cao</option>
+            <option value="medium" {{ ($currentPriority ?? null) === 'medium' ? 'selected' : '' }}>Trung bình</option>
+            <option value="low" {{ ($currentPriority ?? null) === 'low' ? 'selected' : '' }}>Thấp</option>
+        </select>
+    </div>
+
+    <div class="flex gap-2">
+        <button type="submit" class="bg-blue-strong text-white px-4 py-2 rounded-md hover:bg-blue-hover transition">
+            Lọc
+        </button>
+        <a href="{{ route('todos.index') }}" class="bg-gray text-gray-strong px-4 py-2 rounded-md hover:bg-gray-border transition">
+            Xóa lọc
+        </a>
+    </div>
+</form>
 
 @if($todos->isEmpty())
     <p class="text-gray-text text-center py-8">Chưa có todo nào.</p>
@@ -35,6 +70,7 @@
                     <th class="border border-gray-border px-4 py-3 text-left font-semibold">Tiêu đề</th>
                     <th class="border border-gray-border px-4 py-3 text-left font-semibold">Mô tả</th>
                     <th class="border border-gray-border px-4 py-3 text-left font-semibold">Danh mục</th>
+                    <th class="border border-gray-border px-4 py-3 text-left font-semibold">Ưu tiên</th>
                     <th class="border border-gray-border px-4 py-3 text-left font-semibold">Trạng thái</th>
                     <th class="border border-gray-border px-4 py-3 text-left font-semibold">Ngày tạo</th>
                     <th class="border border-gray-border px-4 py-3 text-left font-semibold">Thao tác</th>
@@ -47,6 +83,13 @@
                         <td class="border border-gray-border px-4 py-3"><strong>{{ $todo->title }}</strong></td>
                         <td class="border border-gray-border px-4 py-3">{{ $todo->description ?? '' }}</td>
                         <td class="border border-gray-border px-4 py-3">{{ $todo->category->name ?? 'Không có' }}</td>
+                        <td class="border border-gray-border px-4 py-3">
+                            @php $priorityMap = ['high' => 'Cao', 'medium' => 'Trung bình', 'low' => 'Thấp']; @endphp
+                            <span class="px-2 py-1 rounded text-sm
+                                {{ $todo->priority === 'high' ? 'bg-red-100 text-red-700' : ($todo->priority === 'low' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700') }}">
+                                {{ $priorityMap[$todo->priority ?? 'medium'] ?? 'Trung bình' }}
+                            </span>
+                        </td>
                         <td class="border border-gray-border px-4 py-3">
                             <span class="px-2 py-1 rounded text-sm {{ $todo->status === 'completed' ? 'bg-green-light text-green-dark' : 'bg-yellow-light text-yellow-dark' }}">
                                 {{ $todo->status === 'completed' ? 'Hoàn thành' : 'Đang làm' }}
@@ -77,6 +120,9 @@
                 @endforeach
             </tbody>
         </table>
+    </div>
+    <div class="mt-4">
+        {{ $todos->links() }}
     </div>
 @endif
 @endsection

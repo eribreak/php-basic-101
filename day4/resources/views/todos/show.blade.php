@@ -29,6 +29,13 @@
                 <td class="border border-gray-border px-4 py-3">{{ $todo->category->name ?? 'Không có' }}</td>
             </tr>
             <tr class="hover:bg-gray-bg">
+                <th class="border border-gray-border px-4 py-3 text-left font-semibold bg-gray-light">Ưu tiên</th>
+                <td class="border border-gray-border px-4 py-3">
+                    @php $priorityMap = ['high' => 'Cao', 'medium' => 'Trung bình', 'low' => 'Thấp']; @endphp
+                    {{ $priorityMap[$todo->priority ?? 'medium'] ?? 'Trung bình' }}
+                </td>
+            </tr>
+            <tr class="hover:bg-gray-bg">
                 <th class="border border-gray-border px-4 py-3 text-left font-semibold bg-gray-light">Trạng thái</th>
                 <td class="border border-gray-border px-4 py-3">
                     <span class="px-2 py-1 rounded text-sm {{ $todo->status === 'completed' ? 'bg-green-light text-green-dark' : 'bg-yellow-light text-yellow-dark' }}">

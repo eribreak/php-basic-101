@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'TodoList') - Laravel</title>
-    
-    <x-critical-css />
-    
-    @vite(['resources/js/blade.ts'])
+    @vite(['resources/css/app.css'])
+
 </head>
 <body class="bg-gray-bg text-gray-dark font-sans antialiased">
     @auth
@@ -20,9 +18,6 @@
                 <div class="flex gap-5 items-center">
                     <a href="{{ route('todos.index') }}" class="text-gray-strong hover:bg-gray-light px-4 py-2 rounded transition">
                         Trang chủ
-                    </a>
-                    <a href="{{ route('todos.create') }}" class="text-gray-strong hover:bg-gray-light px-4 py-2 rounded transition">
-                        Thêm Todo
                     </a>
                     <a href="{{ route('notifications.index') }}" class="text-gray-strong hover:bg-gray-light px-4 py-2 rounded transition">
                         Thông báo

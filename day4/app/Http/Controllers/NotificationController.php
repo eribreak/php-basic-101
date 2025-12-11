@@ -4,21 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class NotificationController extends Controller
 {
-    private function getDefaultUser(): User
+    private function getCurrentUser(): User
     {
-        return User::firstOrCreate(
-            ['email' => 'ngokcuaank@gmail.com'],
-            ['name' => 'Admin', 'password' => bcrypt('password')]
-        );
+        return Auth::user();
     }
 
     public function index(): View
     {
-        $user = $this->getDefaultUser();
+        $user = $this->getCurrentUser();
+
         $notifications = $user->notifications()->paginate(15);
 
         return view('notifications.index', [
@@ -28,7 +27,8 @@ class NotificationController extends Controller
 
     public function markAsRead(string $id): RedirectResponse
     {
-        $user = $this->getDefaultUser();
+        $user = $this->getCurrentUser();
+
         $notification = $user->notifications()->find($id);
 
         if ($notification) {
@@ -41,7 +41,8 @@ class NotificationController extends Controller
 
     public function markAllAsRead(): RedirectResponse
     {
-        $user = $this->getDefaultUser();
+        $user = $this->getCurrentUser();
+
         $user->unreadNotifications->markAsRead();
 
         return redirect()->route('notifications.index')
@@ -50,7 +51,8 @@ class NotificationController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $user = $this->getDefaultUser();
+        $user = $this->getCurrentUser();
+
         $user->notifications()->find($id)?->delete();
 
         return redirect()->route('notifications.index')

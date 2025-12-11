@@ -21,11 +21,11 @@
         <label for="title" class="block mb-2 font-medium text-gray-strong">
             Tiêu đề <span class="text-red">*</span>
         </label>
-        <input 
-            type="text" 
-            id="title" 
-            name="title" 
-            required 
+        <input
+            type="text"
+            id="title"
+            name="title"
+            required
             value="{{ old('title', $todo->title) }}"
             class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent @error('title') border-red @enderror"
         >
@@ -36,8 +36,8 @@
 
     <div class="mb-5">
         <label for="description" class="block mb-2 font-medium text-gray-strong">Mô tả</label>
-        <textarea 
-            id="description" 
+        <textarea
+            id="description"
             name="description"
             rows="4"
             class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent resize-y min-h-[100px] @error('description') border-red @enderror"
@@ -49,8 +49,8 @@
 
     <div class="mb-5">
         <label for="category_id" class="block mb-2 font-medium text-gray-strong">Danh mục</label>
-        <select 
-            id="category_id" 
+        <select
+            id="category_id"
             name="category_id"
             class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent @error('category_id') border-red @enderror"
         >
@@ -67,9 +67,25 @@
     </div>
 
     <div class="mb-5">
+        <label for="priority" class="block mb-2 font-medium text-gray-strong">Ưu tiên</label>
+        <select
+            id="priority"
+            name="priority"
+            class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent @error('priority') border-red @enderror"
+        >
+            <option value="high" {{ old('priority', $todo->priority) === 'high' ? 'selected' : '' }}>Cao</option>
+            <option value="medium" {{ old('priority', $todo->priority) === 'medium' ? 'selected' : '' }}>Trung bình</option>
+            <option value="low" {{ old('priority', $todo->priority) === 'low' ? 'selected' : '' }}>Thấp</option>
+        </select>
+        @error('priority')
+            <div class="text-red-strong text-sm mt-1">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-5">
         <label for="status" class="block mb-2 font-medium text-gray-strong">Trạng thái</label>
-        <select 
-            id="status" 
+        <select
+            id="status"
             name="status"
             class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent @error('status') border-red @enderror"
         >

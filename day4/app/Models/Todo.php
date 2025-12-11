@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Todo extends Model
 {
     use HasFactory;
-    protected $fillable = ['title', 'description', 'status', 'category_id', 'user_id'];
+    protected $fillable = ['title', 'description', 'status', 'priority', 'category_id', 'user_id'];
 
     public function user(): BelongsTo
     {

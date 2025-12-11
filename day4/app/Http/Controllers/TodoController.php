@@ -24,19 +24,33 @@ class TodoController extends Controller
     public function index(Request $request): View
     {
         $user = $this->getCurrentUser();
-        
+
         $query = Todo::with('category')
             ->where('user_id', $user->id);
 
-        if ($request->has('status') && $request->status !== null) {
-            $query->where('status', $request->status);
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
         }
 
-        $todos = $query->orderBy('created_at', 'desc')->get();
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->get('priority'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        $todos = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->query());
 
         return view('todos.index', [
             'todos' => $todos,
             'currentStatus' => $request->status,
+            'currentPriority' => $request->priority,
+            'searchQuery' => $request->search,
         ]);
     }
 
@@ -52,13 +66,15 @@ class TodoController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'in:pending,completed',
+            'priority' => 'in:high,medium,low',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
         $user = $this->getCurrentUser();
-        
+
         $todo = Todo::create([
             ...$validated,
+            'priority' => $validated['priority'] ?? 'medium',
             'user_id' => $user->id,
         ]);
 
@@ -71,7 +87,7 @@ class TodoController extends Controller
     public function show(Todo $todo): View
     {
         $user = $this->getCurrentUser();
-        
+
         if ($todo->user_id !== $user->id) {
             abort(403, 'Bạn không có quyền xem todo này.');
         }
@@ -83,7 +99,7 @@ class TodoController extends Controller
     public function edit(Todo $todo): View
     {
         $user = $this->getCurrentUser();
-        
+
         if ($todo->user_id !== $user->id) {
             abort(403, 'Bạn không có quyền sửa todo này.');
         }
@@ -98,7 +114,7 @@ class TodoController extends Controller
     public function update(Request $request, Todo $todo): RedirectResponse
     {
         $user = $this->getCurrentUser();
-        
+
         if ($todo->user_id !== $user->id) {
             abort(403, 'Bạn không có quyền cập nhật todo này.');
         }
@@ -107,6 +123,7 @@ class TodoController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'in:pending,completed',
+            'priority' => 'in:high,medium,low',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
@@ -121,7 +138,7 @@ class TodoController extends Controller
     public function destroy(Todo $todo): RedirectResponse
     {
         $user = $this->getCurrentUser();
-        
+
         if ($todo->user_id !== $user->id) {
             abort(403, 'Bạn không có quyền xóa todo này.');
         }
@@ -140,7 +157,7 @@ class TodoController extends Controller
     public function toggleStatus(Todo $todo): RedirectResponse
     {
         $user = $this->getCurrentUser();
-        
+
         if ($todo->user_id !== $user->id) {
             abort(403, 'Bạn không có quyền thay đổi trạng thái todo này.');
         }
