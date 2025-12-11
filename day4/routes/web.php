@@ -1,11 +1,22 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\MailsController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('log.request')->group(function () {
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+});
+
+Route::middleware('auth')->post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::middleware(['auth', 'log.request'])->group(function () {
 
     Route::get('/', [TodoController::class, 'index'])->name('todos.index');
     Route::get('/todos', [TodoController::class, 'index'])->name('todos.index');

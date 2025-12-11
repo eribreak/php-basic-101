@@ -11,21 +11,22 @@ use App\Notifications\TodoStatusChanged;
 use App\Notifications\TodoUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class TodoController extends Controller
 {
-    private function getDefaultUser(): User
+    private function getCurrentUser(): User
     {
-        return User::firstOrCreate(
-            ['email' => 'ngokcuaank@gmail.com'],
-            ['name' => 'Admin', 'password' => bcrypt('password')]
-        );
+        return Auth::user();
     }
 
     public function index(Request $request): View
     {
-        $query = Todo::with('category');
+        $user = $this->getCurrentUser();
+        
+        $query = Todo::with('category')
+            ->where('user_id', $user->id);
 
         if ($request->has('status') && $request->status !== null) {
             $query->where('status', $request->status);
@@ -54,9 +55,13 @@ class TodoController extends Controller
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
-        $todo = Todo::create($validated);
+        $user = $this->getCurrentUser();
+        
+        $todo = Todo::create([
+            ...$validated,
+            'user_id' => $user->id,
+        ]);
 
-        $user = $this->getDefaultUser();
         $user->notify(new TodoCreated($todo));
 
         return redirect()->route('todos.index')
@@ -65,12 +70,24 @@ class TodoController extends Controller
 
     public function show(Todo $todo): View
     {
+        $user = $this->getCurrentUser();
+        
+        if ($todo->user_id !== $user->id) {
+            abort(403, 'Bạn không có quyền xem todo này.');
+        }
+
         $todo->load('category');
         return view('todos.show', ['todo' => $todo]);
     }
 
     public function edit(Todo $todo): View
     {
+        $user = $this->getCurrentUser();
+        
+        if ($todo->user_id !== $user->id) {
+            abort(403, 'Bạn không có quyền sửa todo này.');
+        }
+
         $categories = Category::orderBy('name')->get();
         return view('todos.edit', [
             'todo' => $todo,
@@ -80,6 +97,12 @@ class TodoController extends Controller
 
     public function update(Request $request, Todo $todo): RedirectResponse
     {
+        $user = $this->getCurrentUser();
+        
+        if ($todo->user_id !== $user->id) {
+            abort(403, 'Bạn không có quyền cập nhật todo này.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -89,7 +112,6 @@ class TodoController extends Controller
 
         $todo->update($validated);
 
-        $user = $this->getDefaultUser();
         $user->notify(new TodoUpdated($todo));
 
         return redirect()->route('todos.index')
@@ -98,12 +120,17 @@ class TodoController extends Controller
 
     public function destroy(Todo $todo): RedirectResponse
     {
+        $user = $this->getCurrentUser();
+        
+        if ($todo->user_id !== $user->id) {
+            abort(403, 'Bạn không có quyền xóa todo này.');
+        }
+
         $todoTitle = $todo->title;
         $todoId = $todo->id;
 
         $todo->delete();
 
-        $user = $this->getDefaultUser();
         $user->notify(new TodoDeleted($todoTitle, $todoId));
 
         return redirect()->route('todos.index')
@@ -112,11 +139,16 @@ class TodoController extends Controller
 
     public function toggleStatus(Todo $todo): RedirectResponse
     {
+        $user = $this->getCurrentUser();
+        
+        if ($todo->user_id !== $user->id) {
+            abort(403, 'Bạn không có quyền thay đổi trạng thái todo này.');
+        }
+
         $oldStatus = $todo->status;
         $todo->status = $todo->status === 'completed' ? 'pending' : 'completed';
         $todo->save();
 
-        $user = $this->getDefaultUser();
         $user->notify(new TodoStatusChanged($todo, $oldStatus, $todo->status));
 
         return redirect()->route('todos.index')
