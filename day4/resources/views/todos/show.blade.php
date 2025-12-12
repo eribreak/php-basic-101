@@ -36,6 +36,51 @@
                 </td>
             </tr>
             <tr class="hover:bg-gray-bg">
+                <th class="border border-gray-border px-4 py-3 text-left font-semibold bg-gray-light">Đính kèm</th>
+                <td class="border border-gray-border px-4 py-3">
+                    @if($todo->attachment_path)
+                        @php
+                            $url = Storage::disk('public')->url($todo->attachment_path);
+                            $filename = basename($todo->attachment_path);
+                            $extension = strtolower(pathinfo($todo->attachment_path, PATHINFO_EXTENSION));
+                            $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
+                            $isPdf = $extension === 'pdf';
+                            $isText = in_array($extension, ['txt', 'md', 'log', 'json', 'csv']);
+                        @endphp
+                        <a href="{{ $url }}" target="_blank" class="text-blue-strong hover:underline">
+                            Tải / Xem file: {{ $filename }}
+                        </a>
+                        @if($isImage)
+                            <div class="mt-3">
+                                <img src="{{ $url }}" alt="Preview attachment" class="max-h-64 rounded border border-gray-border">
+                            </div>
+                        @elseif($isPdf)
+                            <div class="mt-3 h-96">
+                                <iframe src="{{ $url }}" class="w-full h-full rounded border border-gray-border"></iframe>
+                            </div>
+                        @elseif($isText)
+                            @php
+                                try {
+                                    $textContent = \Illuminate\Support\Str::limit(
+                                        Storage::disk('public')->get($todo->attachment_path),
+                                        5000,
+                                        '...'
+                                    );
+                                } catch (\Throwable $e) {
+                                    $textContent = 'Không thể đọc nội dung file.';
+                                }
+                            @endphp
+                            <div class="mt-3">
+                                <p class="text-sm text-gray-text mb-1">Xem nhanh (tối đa 5000 ký tự):</p>
+                                <pre class="whitespace-pre-wrap bg-gray-100 p-3 rounded border border-gray-border text-sm">{{ $textContent }}</pre>
+                            </div>
+                        @endif
+                    @else
+                        Không có
+                    @endif
+                </td>
+            </tr>
+            <tr class="hover:bg-gray-bg">
                 <th class="border border-gray-border px-4 py-3 text-left font-semibold bg-gray-light">Trạng thái</th>
                 <td class="border border-gray-border px-4 py-3">
                     <span class="px-2 py-1 rounded text-sm {{ $todo->status === 'completed' ? 'bg-green-light text-green-dark' : 'bg-yellow-light text-yellow-dark' }}">

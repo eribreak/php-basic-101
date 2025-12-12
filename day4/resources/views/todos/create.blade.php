@@ -13,7 +13,7 @@
     </div>
 @endif
 
-<form method="POST" action="{{ route('todos.store') }}" class="space-y-6">
+<form method="POST" action="{{ route('todos.store') }}" class="space-y-6" enctype="multipart/form-data">
     @csrf
 
     <div class="mb-5">
@@ -77,6 +77,19 @@
             <option value="low" {{ old('priority') === 'low' ? 'selected' : '' }}>Thấp</option>
         </select>
         @error('priority')
+            <div class="text-red-strong text-sm mt-1">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-5">
+        <label for="attachment" class="block mb-2 font-medium text-gray-strong">Đính kèm (tùy chọn, tối đa 5MB)</label>
+        <input
+            type="file"
+            id="attachment"
+            name="attachment"
+            class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent @error('attachment') border-red @enderror"
+        >
+        @error('attachment')
             <div class="text-red-strong text-sm mt-1">{{ $message }}</div>
         @enderror
     </div>

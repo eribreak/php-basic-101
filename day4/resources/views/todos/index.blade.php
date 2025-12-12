@@ -98,10 +98,13 @@
                         <td class="border border-gray-border px-4 py-3">{{ $todo->created_at->format('d/m/Y H:i') }}</td>
                         <td class="border border-gray-border px-4 py-3">
                             <div class="flex gap-2 flex-wrap">
-                                <a href="{{ route('todos.toggle-status', $todo) }}" class="bg-green-strong text-white px-3 py-1 rounded text-sm hover:bg-green-hover transition">
+                        <a href="{{ route('todos.toggle-status', $todo) }}" class="bg-green-strong text-white px-3 py-1 rounded text-sm hover:bg-green-hover transition">
                                     Đổi
                                 </a>
-                                <a href="{{ route('todos.edit', $todo) }}" class="bg-blue-strong text-white px-3 py-1 rounded text-sm hover:bg-blue-hover transition">
+                        <a href="{{ route('todos.show', $todo) }}" class="bg-gray text-gray-strong px-3 py-1 rounded text-sm hover:bg-gray-border transition">
+                            Xem
+                        </a>
+                        <a href="{{ route('todos.edit', $todo) }}" class="bg-blue-strong text-white px-3 py-1 rounded text-sm hover:bg-blue-hover transition">
                                     Sửa
                                 </a>
                                 <form action="{{ route('todos.destroy', $todo) }}" method="POST" class="inline">

@@ -13,7 +13,7 @@
     </div>
 @endif
 
-<form method="POST" action="{{ route('todos.update', $todo) }}" class="space-y-6">
+<form method="POST" action="{{ route('todos.update', $todo) }}" class="space-y-6" enctype="multipart/form-data">
     @csrf
     @method('PUT')
 
@@ -78,6 +78,27 @@
             <option value="low" {{ old('priority', $todo->priority) === 'low' ? 'selected' : '' }}>Thấp</option>
         </select>
         @error('priority')
+            <div class="text-red-strong text-sm mt-1">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-5">
+        <label for="attachment" class="block mb-2 font-medium text-gray-strong">Đính kèm (tùy chọn, tối đa 5MB)</label>
+        @if($todo->attachment_path)
+            <div class="mb-2">
+                @php $filename = basename($todo->attachment_path); @endphp
+                <a href="{{ Storage::disk('public')->url($todo->attachment_path) }}" target="_blank" class="text-blue-strong hover:underline">
+                    Xem file hiện tại: {{ $filename }}
+                </a>
+            </div>
+        @endif
+        <input
+            type="file"
+            id="attachment"
+            name="attachment"
+            class="w-full px-4 py-2 border border-gray-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue focus:border-transparent @error('attachment') border-red @enderror"
+        >
+        @error('attachment')
             <div class="text-red-strong text-sm mt-1">{{ $message }}</div>
         @enderror
     </div>

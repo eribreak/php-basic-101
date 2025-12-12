@@ -14,7 +14,7 @@ class MailsController extends Controller
         // Eager load the category relationship
         $todo->load('category');
 
-        Mail::to('ngokcuaank@gmail.com')->send(new WelcomeMail($todo));
+        Mail::to('ngokcuaank@gmail.com')->queue(new WelcomeMail($todo));
 
         return redirect()->route('todos.index')->with('success', 'Gửi email thành công: ' . $todo->title);
     }

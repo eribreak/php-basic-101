@@ -5,9 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'TodoList') - Laravel</title>
     @vite(['resources/css/app.css'])
-
 </head>
 <body class="bg-gray-bg text-gray-dark font-sans antialiased">
+    <div id="loadingOverlay"
+        style="
+            display:none;
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.45);
+            color:white;
+            font-size:22px;
+            justify-content:center;
+            align-items:center;
+            z-index:9999;
+        ">
+        Đang xử lý...
+    </div>
     @auth
     <div class="bg-white shadow-sm mb-8">
         <div class="max-w-7xl mx-auto px-5">
@@ -52,5 +65,23 @@
             @yield('content')
         </div>
     </div>
+    <script>
+    const overlay = document.getElementById('loadingOverlay');
+
+    document.addEventListener('submit', function(e) {
+        overlay.style.display = 'flex';
+    });
+
+    document.addEventListener('click', function(e) {
+        const el = e.target.closest('a');
+
+        if (!el) return;
+
+        if (el.target === "_blank") return;
+        if (el.href.includes('#')) return;
+
+        overlay.style.display = 'flex';
+    });
+    </script>
 </body>
 </html>

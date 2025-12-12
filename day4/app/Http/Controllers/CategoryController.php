@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
+    public function __construct(private CategoryRepositoryInterface $categories)
+    {
+    }
+
     public function index(): View
     {
-        $categories = Category::orderBy('name')->get();
+        $categories = $this->categories->getAll();
         return view('categories.index', ['categories' => $categories]);
     }
 
@@ -27,7 +32,7 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Category::create($validated);
+        $this->categories->create($validated);
 
         return redirect()->route('categories.index')
             ->with('success', 'Tạo danh mục thành công!');
@@ -50,7 +55,7 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $category->update($validated);
+        $this->categories->update($category, $validated);
 
         return redirect()->route('categories.index')
             ->with('success', 'Cập nhật danh mục thành công!');
@@ -58,7 +63,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
-        $category->delete();
+        $this->categories->delete($category);
 
         return redirect()->route('categories.index')
             ->with('success', 'Xóa danh mục thành công!');

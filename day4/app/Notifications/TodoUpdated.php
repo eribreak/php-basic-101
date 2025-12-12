@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TodoUpdated extends Notification
+class TodoUpdated extends Notification implements ShouldQueue
 {
     use Queueable;
 

@@ -9,13 +9,21 @@ use App\Notifications\TodoCreated;
 use App\Notifications\TodoDeleted;
 use App\Notifications\TodoStatusChanged;
 use App\Notifications\TodoUpdated;
+use App\Repositories\Interfaces\TodoRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class TodoController extends Controller
 {
+
+    public function __construct(
+        private TodoRepositoryInterface $todoRepository
+    ) {
+    }
+
     private function getCurrentUser(): User
     {
         return Auth::user();
@@ -25,26 +33,15 @@ class TodoController extends Controller
     {
         $user = $this->getCurrentUser();
 
-        $query = Todo::with('category')
-            ->where('user_id', $user->id);
+        $todos = $this->todoRepository->paginateForUser(
+            userId: $user->id,
+            status: $request->status,
+            priority: $request->priority,
+            search: $request->search,
+            perPage: 10
+        );
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->get('priority'));
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
-            });
-        }
-
-        $todos = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->query());
+        $todos->appends($request->query());
 
         return view('todos.index', [
             'todos' => $todos,
@@ -68,15 +65,25 @@ class TodoController extends Controller
             'status' => 'in:pending,completed',
             'priority' => 'in:high,medium,low',
             'category_id' => 'nullable|exists:categories,id',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf,txt,md,log,json,csv|max:5120',
         ]);
 
         $user = $this->getCurrentUser();
 
-        $todo = Todo::create([
+        $data = [
             ...$validated,
             'priority' => $validated['priority'] ?? 'medium',
             'user_id' => $user->id,
-        ]);
+        ];
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $fileName = $file->getClientOriginalName();
+            $path = $file->storeAs('todos', $fileName, 'public');
+            $data['attachment_path'] = $path;
+        }
+
+        $todo = $this->todoRepository->create($data);
 
         $user->notify(new TodoCreated($todo));
 
@@ -88,7 +95,9 @@ class TodoController extends Controller
     {
         $user = $this->getCurrentUser();
 
-        if ($todo->user_id !== $user->id) {
+        $todo = $this->todoRepository->findByIdAndUser($todo->id, $user->id);
+
+        if (!$todo) {
             abort(403, 'Bạn không có quyền xem todo này.');
         }
 
@@ -100,7 +109,9 @@ class TodoController extends Controller
     {
         $user = $this->getCurrentUser();
 
-        if ($todo->user_id !== $user->id) {
+        $todo = $this->todoRepository->findByIdAndUser($todo->id, $user->id);
+
+        if (!$todo) {
             abort(403, 'Bạn không có quyền sửa todo này.');
         }
 
@@ -115,7 +126,9 @@ class TodoController extends Controller
     {
         $user = $this->getCurrentUser();
 
-        if ($todo->user_id !== $user->id) {
+        $todo = $this->todoRepository->findByIdAndUser($todo->id, $user->id);
+
+        if (!$todo) {
             abort(403, 'Bạn không có quyền cập nhật todo này.');
         }
 
@@ -125,10 +138,24 @@ class TodoController extends Controller
             'status' => 'in:pending,completed',
             'priority' => 'in:high,medium,low',
             'category_id' => 'nullable|exists:categories,id',
+            'attachment' => 'nullable|file|max:5120',
         ]);
 
-        $todo->update($validated);
+        $data = $validated;
 
+        if ($request->hasFile('attachment')) {
+            if (!empty($todo->attachment_path)) {
+                Storage::disk('public')->delete($todo->attachment_path);
+            }
+            $file = $request->file('attachment');
+            $fileName = $file->getClientOriginalName();
+            $path = $file->storeAs('todos', $fileName, 'public');
+            $data['attachment_path'] = $path;
+        }
+
+        $this->todoRepository->update($todo, $data);
+
+        $todo->refresh();
         $user->notify(new TodoUpdated($todo));
 
         return redirect()->route('todos.index')
@@ -139,14 +166,16 @@ class TodoController extends Controller
     {
         $user = $this->getCurrentUser();
 
-        if ($todo->user_id !== $user->id) {
+        $todo = $this->todoRepository->findByIdAndUser($todo->id, $user->id);
+
+        if (!$todo) {
             abort(403, 'Bạn không có quyền xóa todo này.');
         }
 
         $todoTitle = $todo->title;
         $todoId = $todo->id;
 
-        $todo->delete();
+        $this->todoRepository->delete($todo);
 
         $user->notify(new TodoDeleted($todoTitle, $todoId));
 
@@ -158,15 +187,19 @@ class TodoController extends Controller
     {
         $user = $this->getCurrentUser();
 
-        if ($todo->user_id !== $user->id) {
+        $todo = $this->todoRepository->findByIdAndUser($todo->id, $user->id);
+
+        if (!$todo) {
             abort(403, 'Bạn không có quyền thay đổi trạng thái todo này.');
         }
 
         $oldStatus = $todo->status;
-        $todo->status = $todo->status === 'completed' ? 'pending' : 'completed';
-        $todo->save();
+        $newStatus = $todo->status === 'completed' ? 'pending' : 'completed';
 
-        $user->notify(new TodoStatusChanged($todo, $oldStatus, $todo->status));
+        $this->todoRepository->update($todo, ['status' => $newStatus]);
+
+        $todo->refresh();
+        $user->notify(new TodoStatusChanged($todo, $oldStatus, $newStatus));
 
         return redirect()->route('todos.index')
             ->with('success', 'Đổi trạng thái thành công!');
