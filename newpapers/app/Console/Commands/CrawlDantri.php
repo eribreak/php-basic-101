@@ -7,9 +7,6 @@ use Illuminate\Console\Command;
 
 class CrawlDantri extends Command
 {
-    /**
-     * Tên lệnh: php artisan dantri:crawl
-     */
     protected $signature = 'dantri:crawl';
 
     protected $description = 'Crawl category và bài viết từ báo Dân trí';
