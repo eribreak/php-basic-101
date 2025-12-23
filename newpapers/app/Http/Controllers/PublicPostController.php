@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\Contracts\CategoryRepositoryInterface;
+use App\Repositories\Contracts\KeywordRepositoryInterface;
 use App\Repositories\Contracts\PostRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,7 +12,8 @@ class PublicPostController extends Controller
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,
-        private CategoryRepositoryInterface $categoryRepository
+        private CategoryRepositoryInterface $categoryRepository,
+        private KeywordRepositoryInterface $keywordRepository
     ) {
     }
 
@@ -30,9 +32,9 @@ class PublicPostController extends Controller
 
     public function show(string $slug, Request $request): View
     {
-        $post = $this->postRepository->findBySlug($slug);
+        $post = $this->postRepository->findPublicBySlug($slug);
 
-        if (!$post || $post->status !== 'published') {
+        if (! $post) {
             abort(404);
         }
 
@@ -69,6 +71,34 @@ class PublicPostController extends Controller
         return view('public.category', [
             'category' => $category,
             'posts' => $posts,
+        ]);
+    }
+
+    public function search(Request $request): View
+    {
+        $q = $request->query('q');
+        $categorySlug = $request->query('category');
+        $keywordSlug = $request->query('keyword');
+
+        $posts = $this->postRepository->searchPublishedPosts(
+            is_string($q) ? $q : null,
+            is_string($categorySlug) ? $categorySlug : null,
+            is_string($keywordSlug) ? $keywordSlug : null,
+            9
+        );
+
+        $posts->withQueryString();
+
+        $categories = $this->categoryRepository->getAllOrderedByName();
+        $keywords = $this->keywordRepository->getAllOrderedByName();
+
+        return view('public.search', [
+            'posts' => $posts,
+            'categories' => $categories,
+            'keywords' => $keywords,
+            'q' => is_string($q) ? $q : '',
+            'selectedCategory' => is_string($categorySlug) ? $categorySlug : '',
+            'selectedKeyword' => is_string($keywordSlug) ? $keywordSlug : '',
         ]);
     }
 }

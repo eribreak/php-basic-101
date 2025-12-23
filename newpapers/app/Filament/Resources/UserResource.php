@@ -69,7 +69,8 @@ class UserResource extends Resource
                             ])
                             ->required()
                             ->default('user')
-                            ->helperText('Admin: toàn quyền. Editor: chỉ quản lý bài viết. User: chỉ đọc & bình luận.'),
+                            ->helperText('Admin: toàn quyền. Editor: chỉ quản lý bài viết. User: chỉ đọc & bình luận.')
+                            ->disabled(fn (?User $record) => $record && $record->isAdmin()),
                     ]),
             ]);
     }

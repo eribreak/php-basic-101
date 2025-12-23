@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Keyword;
 use App\Repositories\Contracts\KeywordRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
 
 class KeywordRepository extends BaseRepository implements KeywordRepositoryInterface
 {
@@ -20,6 +21,11 @@ class KeywordRepository extends BaseRepository implements KeywordRepositoryInter
     public function findByName(string $name): ?Keyword
     {
         return $this->model->where('name', $name)->first();
+    }
+
+    public function getAllOrderedByName(): Collection
+    {
+        return $this->model->orderBy('name')->get();
     }
 }
 

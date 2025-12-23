@@ -23,6 +23,7 @@ class CrawlDantri extends Command
         $this->crawler->crawlCategoriesAndPosts();
 
         $this->info('Hoàn thành crawl Dân trí.');
+        $this->info(now());
 
         return self::SUCCESS;
     }

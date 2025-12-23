@@ -17,11 +17,14 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class PostResource extends Resource
 {
@@ -34,7 +37,6 @@ class PostResource extends Resource
     protected static ?string $modelLabel = 'Bài viết';
 
     protected static ?string $pluralModelLabel = 'Bài viết';
-
 
 
     public static function form(Form $form): Form
@@ -61,6 +63,24 @@ class PostResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->helperText('URL-friendly title'),
 
+                        Placeholder::make('current_thumbnail')
+                            ->label('Thumbnail hiện tại')
+                            ->content(function (?Post $record) {
+                                $thumbnail = $record?->thumbnail;
+                                if (! $record || ! $thumbnail) {
+                                    return 'Chưa có.';
+                                }
+
+                                $url = Str::startsWith($thumbnail, 'http')
+                                    ? $thumbnail
+                                    : asset('storage/' . $thumbnail);
+
+                                return new HtmlString(
+                                    '<img src="' . e($url) . '" alt="Thumbnail" style="max-width: 100%; height: auto; border-radius: 8px;" />'
+                                );
+                            })
+                            ->visible(fn (?Post $record): bool => (bool) ($record?->thumbnail)),
+
                         FileUpload::make('thumbnail')
                             ->label('Ảnh thumbnail')
                             ->image()
@@ -69,7 +89,34 @@ class PostResource extends Resource
                             ->visibility('public')
                             ->imagePreviewHeight('200')
                             ->maxSize(2048)
-                            ->helperText('Tùy chọn, khuyến khích tỷ lệ 16:9'),
+                            ->formatStateUsing(function ($state): array {
+                                if (blank($state)) {
+                                    return [];
+                                }
+
+                                if (is_array($state)) {
+                                    return $state;
+                                }
+
+                                if (is_string($state) && Str::startsWith($state, 'http')) {
+                                    return [];
+                                }
+
+                                return [(string) $state];
+                            })
+                            ->dehydrateStateUsing(function ($state): ?string {
+                                if (blank($state)) {
+                                    return null;
+                                }
+
+                                if (is_array($state)) {
+                                    return Arr::first($state);
+                                }
+
+                                return is_string($state) ? $state : null;
+                            })
+                            ->dehydrated(fn ($state): bool => filled($state))
+                            ->helperText('Tùy chọn, tỷ lệ 16:9'),
 
                         Textarea::make('excerpt')
                             ->label('Tóm tắt')
@@ -91,10 +138,10 @@ class PostResource extends Resource
                         Select::make('user_id')
                             ->label('Tác giả')
                             ->relationship('author', 'name')
-                            ->required()
-                            ->default(fn() => auth()->id())
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->visible(fn () => auth()->user()->isAdmin()),
+
 
                         Select::make('categories')
                             ->label('Danh mục')
@@ -140,7 +187,7 @@ class PostResource extends Resource
                         DateTimePicker::make('published_at')
                             ->label('Ngày xuất bản')
                             ->displayFormat('d/m/Y H:i')
-                            ->helperText('Chỉ hiển thị khi status = "Đã xuất bản"'),
+                            ->helperText('Chỉ hiển thị khi trạng thái là "Đã xuất bản"'),
                     ]),
             ]);
     }
@@ -220,17 +267,35 @@ class PostResource extends Resource
                     ->relationship('author', 'name')
                     ->searchable()
                     ->preload(),
+
+                Tables\Filters\SelectFilter::make('categories')
+                    ->label('Danh mục')
+                    ->relationship('categories', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('keywords')
+                    ->label('Keyword')
+                    ->relationship('keywords', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn () => auth()->user()?->isAdmin() === true),
+                    ->visible(function (): bool {
+                        $user = Auth::user();
+                        return $user instanceof User && $user->isAdmin();
+                    }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn () => auth()->user()?->isAdmin() === true),
-                ]),
+                        ->visible(function (): bool {
+                            $user = Auth::user();
+                            return $user instanceof User && $user->isAdmin();
+                        }),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -238,9 +303,9 @@ class PostResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = Auth::user();
 
-        if ($user && ! $user->isAdmin()) {
+        if ($user instanceof \App\Models\User && ! $user->isAdmin()) {
             return $query->where('user_id', $user->id);
         }
 

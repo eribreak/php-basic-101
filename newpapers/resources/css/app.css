@@ -7,7 +7,6 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -29,13 +28,13 @@
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
 
-    --color-primary: #111827; /* heading / primary surfaces */
-    --color-primary-foreground: #f9fafb;
+    --color-primary: #2563eb;
+    --color-primary-foreground: #ffffff;
 
-    --color-secondary: #374151; /* main body text */
+    --color-secondary: #374151;
     --color-secondary-foreground: #ffffff;
 
-    --color-muted: #4b5563; /* muted text */
+    --color-muted: #4b5563;
     --color-muted-foreground: #9ca3af;
 
     --color-accent: #111827;
@@ -46,7 +45,7 @@
 
     --color-border: #e5e7eb;
     --color-input: #d1d5db;
-    --color-ring: #111827;
+    --color-ring: #2563eb;
 
     --color-chart-1: #fb923c;
     --color-chart-2: #0ea5e9;

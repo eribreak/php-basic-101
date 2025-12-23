@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Keyword;
 use App\Models\Post;
 use DOMDocument;
 use DOMXPath;
@@ -50,7 +51,7 @@ class DantriCrawler
 
         foreach ($articles as $article) {
             $a = $xpath->query(".//h3/a", $article)->item(0);
-            if (! $a) continue;
+            if (! $a instanceof \DOMElement) continue;
 
             $title = trim($a->textContent);
             $href  = $a->getAttribute('href');
@@ -62,18 +63,24 @@ class DantriCrawler
 
             // Thumbnail
             $img = $xpath->query(".//img", $article)->item(0);
-            $thumbnail =
-                $img?->getAttribute('data-src')
-                ?: $img?->getAttribute('data-original')
-                ?: $img?->getAttribute('src');
+            $thumbnail = null;
+            if ($img instanceof \DOMElement) {
+                $thumbnail =
+                    $img->getAttribute('data-src')
+                    ?: $img->getAttribute('data-original')
+                    ?: $img->getAttribute('src');
+            }
 
             // Excerpt
             $excerptNode = $xpath->query(".//p", $article)->item(0);
             $excerpt = $excerptNode ? trim($excerptNode->textContent) : null;
 
             // Crawl chi tiết
-            $content = $this->crawlArticleContent($articleUrl);
-            if (! $content) continue;
+            $detail = $this->crawlArticleDetail($articleUrl);
+            if (! $detail) continue;
+
+            $content = $detail['content'];
+            $keywordNames = $detail['keywords'];
 
             $post = Post::updateOrCreate(
                 ['slug' => Str::slug($title)],
@@ -89,10 +96,33 @@ class DantriCrawler
             );
 
             $post->categories()->syncWithoutDetaching([$category->id]);
+
+            if ($keywordNames !== []) {
+                $keywordIds = [];
+                foreach ($keywordNames as $name) {
+                    $slug = Str::slug($name);
+                    if ($slug === '') {
+                        continue;
+                    }
+
+                    $keyword = Keyword::updateOrCreate(
+                        ['slug' => $slug],
+                        ['name' => $name]
+                    );
+                    $keywordIds[] = $keyword->id;
+                }
+
+                if ($keywordIds !== []) {
+                    $post->keywords()->syncWithoutDetaching(array_values(array_unique($keywordIds)));
+                }
+            }
         }
     }
 
-    protected function crawlArticleContent(string $url): ?string
+    /**
+     * @return array{content: string, keywords: array<int, string>}|null
+     */
+    protected function crawlArticleDetail(string $url): ?array
     {
         $response = Http::get($url);
         if (! $response->ok()) return null;
@@ -106,6 +136,8 @@ class DantriCrawler
 
         $contentNode = $xpath->query("//div[contains(@class,'singular-content')]")->item(0);
         if (! $contentNode) return null;
+
+        $keywords = $this->extractKeywordsFromArticlePage($xpath);
 
         // Loại script / quảng cáo
         foreach ($xpath->query(".//script|.//style", $contentNode) as $node) {
@@ -153,7 +185,154 @@ class DantriCrawler
             }
         }
 
-        return trim($dom->saveHTML($contentNode));
+        // Lưu inner HTML để không mang theo wrapper "singular-content".
+        $content = trim($this->getInnerHtml($dom, $contentNode));
+        if ($content === '') {
+            return null;
+        }
+
+        return [
+            'content' => $content,
+            'keywords' => $keywords,
+        ];
+    }
+
+    protected function getInnerHtml(DOMDocument $dom, \DOMNode $node): string
+    {
+        $html = '';
+
+        foreach ($node->childNodes as $child) {
+            $html .= $dom->saveHTML($child);
+        }
+
+        return $html;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function extractKeywordsFromArticlePage(DOMXPath $xpath): array
+    {
+        $names = [];
+
+        // 1) meta[name=keywords]
+        $meta = $xpath->query("//meta[translate(@name,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='keywords']/@content")->item(0);
+        if ($meta) {
+            $raw = trim((string) $meta->nodeValue);
+            if ($raw !== '') {
+                $parts = preg_split('/\s*[,;|]\s*/u', $raw) ?: [];
+                foreach ($parts as $part) {
+                    $names[] = $part;
+                }
+            }
+        }
+
+        // 2) Tag list hiển thị trên trang (class thay đổi theo layout)
+        $tagAnchors = $xpath->query(
+            "//a[contains(@href,'/tag/')"
+            . " or contains(@href,'/tag.htm')"
+            . " or contains(concat(' ', normalize-space(@class), ' '), ' tag ')"
+            . " or contains(concat(' ', normalize-space(@class), ' '), ' tags ')"
+            . "]"
+        );
+
+        foreach ($tagAnchors as $a) {
+            $text = trim((string) $a->textContent);
+            if ($text !== '') {
+                $names[] = $text;
+            }
+        }
+
+        // 3) JSON-LD (fallback) nếu có keywords
+        $jsonLdNodes = $xpath->query("//script[@type='application/ld+json']");
+        foreach ($jsonLdNodes as $node) {
+            $json = trim((string) $node->textContent);
+            if ($json === '') {
+                continue;
+            }
+
+            $decoded = json_decode($json, true);
+            if (! is_array($decoded)) {
+                continue;
+            }
+
+            $candidates = [];
+            $stack = [$decoded];
+            while ($stack !== []) {
+                $current = array_pop($stack);
+                if (! is_array($current)) {
+                    continue;
+                }
+
+                if (array_key_exists('keywords', $current)) {
+                    $candidates[] = $current['keywords'];
+                }
+
+                foreach ($current as $value) {
+                    if (is_array($value)) {
+                        $stack[] = $value;
+                    }
+                }
+            }
+
+            foreach ($candidates as $candidate) {
+                if (is_string($candidate)) {
+                    $parts = preg_split('/\s*[,;|]\s*/u', $candidate) ?: [];
+                    foreach ($parts as $part) {
+                        $names[] = $part;
+                    }
+                } elseif (is_array($candidate)) {
+                    foreach ($candidate as $item) {
+                        if (is_string($item)) {
+                            $names[] = $item;
+                        }
+                    }
+                }
+            }
+        }
+
+        // normalize + dedupe
+        $normalized = [];
+        foreach ($names as $name) {
+            $name = $this->normalizeKeywordName($name);
+            if ($name === '') {
+                continue;
+            }
+
+            // Lọc keyword rác thường gặp
+            $lower = mb_strtolower($name);
+            if ($lower === 'dantri' || $lower === 'dân trí' || $lower === 'dân tri') {
+                continue;
+            }
+
+            $normalized[] = $name;
+        }
+
+        $unique = [];
+        $seen = [];
+        foreach ($normalized as $name) {
+            $key = Str::slug($name);
+            if ($key === '' || isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $unique[] = $name;
+        }
+
+        return $unique;
+    }
+
+    protected function normalizeKeywordName(string $name): string
+    {
+        $name = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $name = preg_replace('/\s+/u', ' ', $name) ?? $name;
+        $name = trim($name);
+
+        // Một số tag có thể có dấu # hoặc ký tự phân tách
+        $name = ltrim($name, "# \t\n\r\0\x0B");
+        $name = trim($name, " \t\n\r\0\x0B,;|");
+
+        return $name;
     }
 
     protected function normalizeUrl(string $url): string

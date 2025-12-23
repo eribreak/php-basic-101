@@ -13,7 +13,7 @@
                 <div class="mt-2 flex flex-wrap items-center gap-2">
                     @foreach($categories as $category)
                         <a href="{{ route('categories.show', $category->slug) }}"
-                           class="rounded-full border border-gray-200 px-3 py-0.5 text-xs text-body hover:bg-chipBg">
+                           class="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/15">
                             {{ $category->name }}
                         </a>
                     @endforeach
@@ -30,17 +30,17 @@
     @if($featured)
         <section class="mb-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
             <article class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <a href="{{ route('posts.show', $featured->slug) }}" class="block">
+                    <a href="{{ route('posts.show', $featured->public_slug) }}" class="block">
                     <div class="w-full overflow-hidden bg-chipBg">
-                        @if($featured->thumbnail)
+                            @if($featured->public_thumbnail)
                             <img
-                                src="{{ Str::startsWith($featured->thumbnail, 'http') ? $featured->thumbnail : asset('storage/'.$featured->thumbnail) }}"
-                                alt="{{ $featured->title }}"
+                                    src="{{ Str::startsWith($featured->public_thumbnail, 'http') ? $featured->public_thumbnail : asset('storage/'.$featured->public_thumbnail) }}"
+                                    alt="{{ $featured->public_title }}"
                                 class="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.02]"
                             >
                         @else
                             <div class="flex h-full w-full items-center justify-center bg-gray-200 text-sm font-semibold text-mutedText">
-                                NewPaper
+                                No Image
                             </div>
                         @endif
                     </div>
@@ -50,28 +50,28 @@
                     <div class="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-softText">
                         @foreach($featured->categories as $cat)
                             <a href="{{ route('categories.show', $cat->slug) }}"
-                               class="rounded-full bg-chipBg px-2 py-0.5 text-[11px] text-body hover:bg-gray-200">
+                               class="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/15">
                                 {{ $cat->name }}
                             </a>
                         @endforeach
                         <span class="ml-auto">
-                            {{ optional($featured->published_at)->format('d M Y') }} · {{ $featured->views_count ?? 0 }} lượt xem
+                                {{ optional($featured->public_published_at)->format('d M Y') }} · {{ $featured->views_count ?? 0 }} lượt xem
                         </span>
                     </div>
 
-                    <h2 class="text-xl font-semibold leading-snug text-heading">
-                        <a href="{{ route('posts.show', $featured->slug) }}" class="hover:text-body">
-                            {{ $featured->title }}
+                    <h2 title="{{ $featured->public_title }}" class="text-xl font-semibold leading-snug text-heading overflow-hidden text-ellipsis whitespace-nowrap">
+                            <a href="{{ route('posts.show', $featured->public_slug) }}" class="hover:text-body">
+                                {{ $featured->public_title }}
                         </a>
                     </h2>
 
                     <p class="mt-2 text-sm text-body line-clamp-3">
-                        {{ \Illuminate\Support\Str::limit($featured->excerpt ?? strip_tags($featured->content), 220) }}
+                            {{ \Illuminate\Support\Str::limit($featured->public_excerpt ?? strip_tags($featured->public_content), 220) }}
                     </p>
 
                     <div class="mt-4 flex items-center justify-between text-xs text-softText">
                         <p>Tác giả: <span class="font-medium text-body">{{ $featured->author->name ?? 'Ẩn danh' }}</span></p>
-                        <a href="{{ route('posts.show', $featured->slug) }}" class="font-medium text-body hover:text-heading">
+                            <a href="{{ route('posts.show', $featured->public_slug) }}" class="font-medium text-body hover:text-heading">
                             Đọc chi tiết →
                         </a>
                     </div>
@@ -83,18 +83,22 @@
                     <h2 class="text-xs font-semibold uppercase tracking-[0.12em] text-softText">Tin đáng chú ý</h2>
                     <div class="mt-3 space-y-3">
                         @foreach($hotPosts as $hot)
-                            <a href="{{ route('posts.show', $hot->slug) }}" class="flex gap-3 group">
-                                @if($hot->thumbnail)
+                                <a href="{{ route('posts.show', $hot->public_slug) }}" class="flex gap-3 group">
+                                    @if($hot->public_thumbnail)
                                     <div class="h-14 w-20 shrink-0 overflow-hidden rounded bg-gray-100">
-                                        <img src="{{ Str::startsWith($hot->thumbnail, 'http') ? $hot->thumbnail : asset('storage/'.$hot->thumbnail) }}" alt="{{ $hot->title }}" class="h-full w-full object-cover">
+                                            <img src="{{ Str::startsWith($hot->public_thumbnail, 'http') ? $hot->public_thumbnail : asset('storage/'.$hot->public_thumbnail) }}" alt="{{ $hot->public_title }}" class="h-full w-full object-cover">
+                                    </div>
+                                @else
+                                    <div class="flex h-16 w-16 shrink-0 items-center justify-center bg-gray-200 text-xs font-semibold text-mutedText">
+                                        No Image
                                     </div>
                                 @endif
                                 <div class="min-w-0">
-                                    <p class="line-clamp-2 text-xs font-medium text-heading group-hover:text-body">
-                                        {{ $hot->title }}
+                                    <p title="{{ $hot->public_title }}" class="line-clamp-2 text-xs font-medium text-heading group-hover:text-body">
+                                            {{ $hot->public_title }}
                                     </p>
                                     <p class="mt-1 text-[11px] text-softText">
-                                        {{ optional($hot->published_at)->format('d M Y') }} · {{ $hot->views_count ?? 0 }} lượt xem
+                                            {{ optional($hot->public_published_at)->format('d M Y') }} · {{ $hot->views_count ?? 0 }} lượt xem
                                     </p>
                                 </div>
                             </a>
@@ -119,46 +123,46 @@
             @if($others->count())
                 <div class="grid gap-4 sm:grid-cols-2">
                     @foreach($others as $post)
-                        <article class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                            <a href="{{ route('posts.show', $post->slug) }}" class="block w-full overflow-hidden bg-chipBg">
-                                @if($post->thumbnail)
+                            <article class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                        <a href="{{ route('posts.show', $post->public_slug) }}" class="block w-full overflow-hidden bg-chipBg">
+                                    @if($post->public_thumbnail)
                                     <img
-                                        src="{{ Str::startsWith($post->thumbnail, 'http') ? $post->thumbnail : asset('storage/'.$post->thumbnail) }}"
-                                        alt="{{ $post->title }}"
+                                            src="{{ Str::startsWith($post->public_thumbnail, 'http') ? $post->public_thumbnail : asset('storage/'.$post->public_thumbnail) }}"
+                                            alt="{{ $post->public_title }}"
                                         class="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.03]"
                                     >
                                 @else
-                                    <div class="flex h-full w-full items-center justify-center bg-gray-200 text-xs font-semibold text-mutedText">
-                                        NewPaper
+                                    <div class="flex h-80 w-full items-center justify-center bg-gray-200 text-xs font-semibold text-mutedText">
+                                        No Image
                                     </div>
                                 @endif
                             </a>
 
                             <div class="flex flex-1 flex-col p-3">
-                                <h2 class="text-sm font-semibold text-heading line-clamp-2">
-                                    <a href="{{ route('posts.show', $post->slug) }}" class="hover:text-body">
-                                        {{ $post->title }}
+                                    <h2 title="{{ $post->public_title }}" class="text-sm font-semibold text-heading line-clamp-2 overflow-hidden text-ellipsis whitespace-nowrap">
+                                        <a href="{{ route('posts.show', $post->public_slug) }}" class="hover:text-body">
+                                            {{ $post->public_title }}
                                     </a>
                                 </h2>
 
                                 <p class="mt-1 text-[11px] text-softText">
-                                    {{ optional($post->published_at)->format('d M Y') }} · {{ $post->views_count ?? 0 }} lượt xem
+                                        {{ optional($post->public_published_at)->format('d M Y') }} · {{ $post->views_count ?? 0 }} lượt xem
                                 </p>
 
                                 <p class="mt-2 text-xs text-body line-clamp-3">
-                                    {{ \Illuminate\Support\Str::limit($post->excerpt ?? strip_tags($post->content), 140) }}
+                                        {{ \Illuminate\Support\Str::limit($post->public_excerpt ?? strip_tags($post->public_content), 140) }}
                                 </p>
 
                                 <div class="mt-3 flex items-center justify-between gap-2">
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($post->categories as $cat)
                                             <a href="{{ route('categories.show', $cat->slug) }}"
-                                               class="rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-body hover:bg-waterWhite">
+                                               class="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/15">
                                                 {{ $cat->name }}
                                             </a>
                                         @endforeach
                                     </div>
-                                    <a href="{{ route('posts.show', $post->slug) }}" class="text-[11px] font-medium text-body hover:text-heading">
+                                        <a href="{{ route('posts.show', $post->public_slug) }}" class="text-[11px] font-medium text-body hover:text-heading">
                                         Đọc →
                                     </a>
                                 </div>

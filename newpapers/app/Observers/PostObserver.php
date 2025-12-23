@@ -20,6 +20,10 @@ class PostObserver
      */
     public function updated(Post $post): void
     {
+        if ($post->wasChanged('published_at') || $post->wasChanged('status')) {
+            $post->forceFill(['publish_reminder_sent_at' => null])->saveQuietly();
+        }
+
         $dirtyFields = ['title', 'slug', 'excerpt', 'content', 'status', 'thumbnail', 'published_at'];
         $hasContentChange = false;
 

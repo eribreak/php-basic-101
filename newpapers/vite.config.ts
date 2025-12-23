@@ -7,7 +7,11 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/js/app.ts'],
+            input: [
+                'resources/js/app.ts',
+                'resources/js/auth.ts',
+                'resources/js/public/comments.js',
+            ],
             ssr: 'resources/js/ssr.ts',
             refresh: true,
         }),
@@ -26,7 +30,7 @@ export default defineConfig({
     ],
     css: {
         preprocessorOptions: {
-          scss: { api: 'modern-compiler' },
+            scss: { api: 'modern-compiler' },
         },
     },
 });

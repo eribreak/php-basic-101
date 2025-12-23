@@ -10,6 +10,14 @@
                 <dt class="font-medium text-softText">Slug:</dt>
                 <dd class="text-heading">{{ $version->slug }}</dd>
             </div>
+            <div>
+                <dt class="font-medium text-softText">Ảnh thumbnail:</dt>
+                <dd class="text-heading">
+                    @if($version->thumbnail)
+                        <img src="{{ Str::startsWith($version->thumbnail, 'http') ? $version->thumbnail : asset('storage/'.$version->thumbnail) }}" alt="{{ $version->title }}" class="h-24 w-24 object-cover rounded border border-gray-200">
+                    @else
+                        <span class="text-softText">Chưa có ảnh</span>
+                    @endif
             @if($version->excerpt)
             <div>
                 <dt class="font-medium text-softText">Tóm tắt:</dt>
